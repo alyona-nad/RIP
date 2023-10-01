@@ -37,9 +37,8 @@ type Colorant struct {
 }
 
 type Dye_Colorants struct {
-	ID_DyeColorant uint `gorm:"primaryKey"`
-	Dye_ID         uint
-	DyeColorant    Dye `gorm:"foreignKey:Dye_ID"`
-	Colorant_ID    uint
-	ColorantDye    Colorant `gorm:"foreignKey:Colorant_ID"`
+	Dye_ID      uint
+	DyeColorant Dye `gorm:"primaryKey;foreignKey:Dye_ID"`
+	Colorant_ID uint
+	ColorantDye Colorant `gorm:"primaryKey;foreignKey:Colorant_ID"`
 }
