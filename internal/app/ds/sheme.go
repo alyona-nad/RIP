@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type User struct {
+type Users struct {
 	ID_User       uint `gorm:"primaryKey"`
 	Name          string
 	Phone         string `gorm:"unique"`
@@ -13,21 +13,21 @@ type User struct {
 	Role          string
 }
 
-type Dye struct {
+type Dyes struct {
 	ID_Dye         uint `gorm:"primaryKey"`
 	User_ID        uint
-	User           User `gorm:"foreignKey:User_ID"`
+	User           Users `gorm:"foreignKey:User_ID"`
 	Name           string
 	Status         string
 	CreationDate   time.Time
 	FormationDate  time.Time
 	CompletionDate time.Time
 	Moderator      uint
-	ModeratorUser  User       `gorm:"foreignKey:Moderator"`
-	Colorants      []Colorant `gorm:"many2many:Dye_Colorants;"`
+	ModeratorUser  Users                 `gorm:"foreignKey:Moderator"`
+	Colorants      []ColorantsAndOtheres `gorm:"many2many:Dye_Colorants;"`
 }
-type Colorant struct {
-	ID_Colorant int64 `gorm:"primaryKey"`
+type ColorantsAndOtheres struct {
+	ID_Colorant int64 `gorm:"primaryKey;autoIncrement"`
 	Name        string
 	Image       string
 	Link        string
@@ -37,8 +37,9 @@ type Colorant struct {
 }
 
 type Dye_Colorants struct {
-	Dye_ID      uint
-	DyeColorant Dye `gorm:"primaryKey;foreignKey:Dye_ID"`
-	Colorant_ID uint
-	ColorantDye Colorant `gorm:"primaryKey;foreignKey:Colorant_ID"`
+	ID_Dye          uint
+	DyeColorant     Dyes `gorm:"primaryKey;foreignKey:ID_Dye"`
+	ID_Colorant     uint
+	ColorantDye     ColorantsAndOtheres `gorm:"primaryKey;foreignKey:ID_Colorant"`
+	Percent_Content float64
 }
