@@ -1,48 +1,30 @@
 package api
 
 import (
-	"log"
-	"net/http"
-
-	//"strconv"
-	"strings"
-
 	"awesomeProject/internal/app/ds"
 	"awesomeProject/internal/app/dsn"
 	"awesomeProject/internal/app/repository"
-
-	//"awesomeProject/internal/pkg"
+	"log"
+	"net/http"
+	
+	//"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/kljensen/snowball/russian"
-
-	//"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	//"github.com/kljensen/snowball/russian"
+	//"gorm.io/gorm"
 )
 
-type ServiceProduct struct {
-	ID_Colorant int64
-	Name        string
-	Image       string
-	Link        string
-	Description string
-	Properties  string
-	Status      string
+func singleton() uint {
+	var user uint
+	user = 3
+	return user
 }
 
-type  adddye struct {
-	ID_User uint
-	//percent string
-}
-
-func GetProductsFromDB(db *gorm.DB) ([]ServiceProduct, error) {
-	var products []ServiceProduct
-	err := db.Table("colorants_and_otheres").Select("id_colorant, name, image, description, properties,status").Where("status = ?", "Действует").Scan(&products).Error
-	if err != nil {
-		return nil, err
-	}
-	return products, nil
+type DyeWithColorants struct {
+	ds.Dyes
+	Colorants []ds.ColorantsAndOtheres
 }
 
 func StartServer() {
@@ -59,34 +41,22 @@ func StartServer() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	r.GET("/home", func(c *gin.Context) {
+	r.GET("/list_of_colorants", func(c *gin.Context) { 
 
-		var products []ds.ColorantsAndOtheres
-		products, err := repo.GetAllColorant()
-		if err != nil {
-			panic("failed to get products from DB")
-		}
+		
 		filterValue := c.Query("filterValue")
 
-		var filteredServices []ds.ColorantsAndOtheres
-		if filterValue != "" {
-			filterValueNormalized := russian.Stem(filterValue, false)
-
-			for _, service := range products {
-				serviceNameNormalized := russian.Stem(service.Name, false)
-				if strings.Contains(strings.ToLower(serviceNameNormalized), strings.ToLower(filterValueNormalized)) {
-					filteredServices = append(filteredServices, service)
-				}
-			}
-		} else {
-			filteredServices = products
+		products, err := repo.FilterColorant(filterValue)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при выполнении запроса к базе данных"})
+			return
 		}
-
+		
 		/*c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"services":    filteredServices,
 			"filterValue": filterValue,
 		})*/
-		c.JSON(http.StatusOK, filteredServices)
+		c.JSON(http.StatusOK, products)
 	})
 
 	r.GET("/product/:id", func(c *gin.Context) {
@@ -101,7 +71,7 @@ func StartServer() {
 		c.JSON(http.StatusOK, product)
 	})
 
-	r.POST("/delete-service/:id", func(c *gin.Context) {
+	r.DELETE("/delete-service/:id", func(c *gin.Context) {
 		serviceID := c.Param("id")
 
 		repo.DeleteColorant(serviceID)
@@ -139,7 +109,7 @@ func StartServer() {
 
 	})
 
-	r.POST("/update_services/:id", func(c *gin.Context) {
+	r.PUT("/update_services/:id", func(c *gin.Context) {
 		serviceID := c.Param("id")
 		var newService ds.ColorantsAndOtheres
 		c.BindJSON(&newService)
@@ -158,53 +128,47 @@ func StartServer() {
 
 	})
 
-	r.GET("/home_dyes", func(c *gin.Context) {
+	r.GET("/list_of_dyes", func(c *gin.Context) {
 
-		dyes, err := repo.GetAllDyes()
-		if err != nil {
-			panic("failed to get products from DB")
+		filterDate1 := c.Query("filterDate1")
+		filterDate2 := c.Query("filterDate2")
+		status := c.Query("status")
+		date1, err1 := time.Parse("2006-01-02", filterDate1)
+		date2, err2 := time.Parse("2006-01-02", filterDate2)
+		if err1 != nil || err2 != nil {
 		}
-		var filteredServices []ds.Dyes
-		filterDate := c.Query("filterDate")
-        if filterDate == "" {
-        filteredServices = dyes
-    }
-
-    for _, dye := range dyes {
-        creationDate := dye.CreationDate.Format("2006-01-02")
-        if creationDate == filterDate {
-            filteredServices = append(filteredServices, dye)
-        }
-    }
-		
+		dyes, err := repo.FilterDyesByDateAndStatus(date1, date2, status)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при выполнении запроса к базе данных"})
+			return
+		}
 
 		/*c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"services":    filteredServices,
 			"filterValue": filterValue,
 		})*/
-		c.JSON(http.StatusOK, filteredServices)
+		c.JSON(http.StatusOK, dyes)
 	})
 
 	r.GET("/dye/:id", func(c *gin.Context) {
 		productName := c.Param("id")
-		var dye *ds.Dyes
-		dye, err = repo.GetDyeByID(productName)
+		dye, err := repo.GetDyeByID(productName)
 		if err != nil {
 			panic("failed to get products from DB")
 		}
 		c.JSON(http.StatusOK, dye)
 	})
 
-	r.POST("/delete-dye/:id", func(c *gin.Context) {
+	r.DELETE("/delete-dye/:id", func(c *gin.Context) {
 		serviceID := c.Param("id")
 
-		repo.DeleteDye(serviceID)
+		repo.DeleteDye(serviceID, singleton())
 
 		filterDate := c.Query("filterDate")
 		if filterDate != "" {
-			c.Redirect(http.StatusSeeOther, "/home_dyes?filterDate="+filterDate)
+			c.Redirect(http.StatusSeeOther, "/list_of_dyes?filterDate="+filterDate)
 		} else {
-			c.Redirect(http.StatusSeeOther, "/home_dyes")
+			c.Redirect(http.StatusSeeOther, "/list_of_dyes")
 		}
 		products, err := repo.GetAllDyes()
 		if err != nil {
@@ -217,28 +181,43 @@ func StartServer() {
 
 	r.POST("/colorant/:id", func(c *gin.Context) {
 		productName := c.Param("id")
-		var usercolorant adddye
-		c.BindJSON(&usercolorant)
-		err := repo.CreateDye(productName,usercolorant.ID_User)
+		err := repo.CreateDye(productName, singleton())
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create service"})
 			return
 		}
 
 		dyes, err := repo.GetAllDyes()
-        if err != nil {
-           panic("failed to get dyes from DB")
-        }
-
+		if err != nil {
+			panic("failed to get dyes from DB")
+		}
 
 		c.JSON(http.StatusOK, dyes)
 
 	})
 
-	r.POST("/formation-dye/:id/user/:id1", func(c *gin.Context) {
+	r.PUT("/formation-dye/:id", func(c *gin.Context) {
 		serviceID := c.Param("id")
-		UserID := c.Param("id1")
-		repo.StatusUser(serviceID,UserID)
+		var User []ds.Users
+		User, err := repo.GetAllUsers()
+    if err != nil {
+       panic("failed to get users from DB")
+    }
+		found := false
+		for _, user := range User {
+			if user.ID_User == singleton() {
+				if user.Role == "Пользователь" {
+					found = true
+					break
+				}
+			} 
+		}
+
+		if !found {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный статус пользователя"})
+			return
+		}
+		repo.StatusUser(serviceID, singleton())
 		dyes, err := repo.GetDyeByID(serviceID)
 		if err != nil {
 			panic("failed to get products from DB")
@@ -247,10 +226,29 @@ func StartServer() {
 
 	})
 
-	r.POST("/completion-dye/:id/user/:id1", func(c *gin.Context) {
+	r.PUT("/dyeid/:id/status/:status", func(c *gin.Context) {
 		serviceID := c.Param("id")
-		UserID := c.Param("id1")
-		repo.StatusModeratorEnd(serviceID,UserID)
+		Status := c.Param("status")
+		var User []ds.Users
+		User, err := repo.GetAllUsers()
+    if err != nil {
+       panic("failed to get users from DB")
+    }
+		found := false
+		for _, user := range User {
+			if user.ID_User == singleton() {
+				if user.Role == "Модератор" {
+					found = true
+					break
+				}
+			} 
+		}
+
+		if !found {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный статус пользователя"})
+			return
+		}
+		repo.StatusModerator(serviceID, singleton(), Status)
 		dyes, err := repo.GetDyeByID(serviceID)
 		if err != nil {
 			panic("failed to get products from DB")
@@ -259,19 +257,7 @@ func StartServer() {
 
 	})
 
-	r.POST("/rejection-dye/:id/user/:id1", func(c *gin.Context) {
-		serviceID := c.Param("id")
-		UserID := c.Param("id1")
-		repo.StatusModeratorReject(serviceID,UserID)
-		dyes, err := repo.GetDyeByID(serviceID)
-		if err != nil {
-			panic("failed to get products from DB")
-		}
-		c.JSON(http.StatusOK, dyes)
-
-	})
-
-	r.POST("/update_dyes/:id", func(c *gin.Context) {
+	r.PUT("/update_dyes/:id", func(c *gin.Context) {
 		serviceID := c.Param("id")
 		var dyes ds.Dyes
 		c.BindJSON(&dyes)
@@ -308,12 +294,12 @@ func StartServer() {
 
 	})
 
-	r.POST("/update_many_to_many/:idDye/colorant/:idColorant", func(c *gin.Context) {
+	r.PUT("/update_many_to_many/:idDye/colorant/:idColorant", func(c *gin.Context) {
 		DyeID := c.Param("idDye")
-		ColorantId:= c.Param("idColorant")
+		ColorantId := c.Param("idColorant")
 		var new_many_to_many ds.Dye_Colorants
 		c.BindJSON(&new_many_to_many)
-		err := repo.UpdateManytoMany(DyeID,ColorantId, &new_many_to_many)
+		err := repo.UpdateManytoMany(DyeID, ColorantId, &new_many_to_many)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update service"})
 			return
@@ -330,8 +316,8 @@ func StartServer() {
 
 	r.DELETE("/delete-MtM/:idDye/colorant/:idColorant", func(c *gin.Context) {
 		DyeID := c.Param("idDye")
-		ColorantId:= c.Param("idColorant")
-		err := repo.DeleteMtM(DyeID,ColorantId)
+		ColorantId := c.Param("idColorant")
+		err := repo.DeleteMtM(DyeID, ColorantId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
 			return
