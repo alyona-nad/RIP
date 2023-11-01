@@ -79,8 +79,8 @@ type DyeWithColorants struct {
 	Colorants []ds.ColorantsAndOtheres
 }
 type Colorants struct {
-	*ds.ColorantsAndOtheres
-	Dyes []uint
+	Colorants []ds.ColorantsAndOtheres
+	Dyes uint
 }
 
 // func (r *Repository) GetAllDyes() ([]ds.Dyes, error) {
@@ -344,34 +344,37 @@ func (r *Repository) FilterDyesByDateAndStatus(date1, date2 time.Time, status st
 }
 
 
-func (r *Repository) FilterColorant(name string) (/*[]ds.ColorantsAndOtheres*/[]Colorants, error) {//черновик
-	var ColorantsDyes []Colorants
+func (r *Repository) FilterColorant(name string,id uint) (/*[]ds.ColorantsAndOtheres*/Colorants, error) {//черновик
+	//var ColorantsDyes []Colorants
 	var colorant []ds.ColorantsAndOtheres
 	if name != "" {
 		filterValueNormalized := russian.Stem(name, false)
-
-	if err := r.db.Where("name ILIKE ?", "%"+filterValueNormalized+"%").Find(&colorant).Error; err != nil {
+	
+	if err := r.db.Where("name ILIKE ? and status = ?", "%"+filterValueNormalized+"%","Действует").Find(&colorant).Error; err != nil {
 		panic("failed to get products from DB")
 	}
 	}  else {
-		if err := r.db.Find(&colorant).Error; err != nil {
+		if err := r.db.Where("status = ?","Действует").Find(&colorant).Error; err != nil {
 			panic("failed to get products from DB")
 		}
 	}
 
-	for i := range colorant {
+	//for i := range colorant {
 		//r.db.Preload("User").Preload("ModeratorUser").Find(&dyes[i])
 
-		var DyesIDs []uint
-		r.db.Table("colorants_and_otheres").
+		var DyesIDs uint
+		//r.db.Table("colorants_and_otheres").
+		/*r.db.Table("dye_colorants").
 			Where("id_colorant = ?", colorant[i].ID_Colorant).
+			Pluck("id_dye", &DyesIDs)*/
+			r.db.Table("dyes").
+			Where("user_id = ? and status=?", id,"Действует").
 			Pluck("id_dye", &DyesIDs)
-
-		ColorantDye := Colorants{
+			ColorantsDyes := Colorants{
 			Dyes: DyesIDs,
-			ColorantsAndOtheres: &colorant[i],
-		}
-		ColorantsDyes = append(ColorantsDyes, ColorantDye)
+			Colorants: colorant,
+		//}
+		//ColorantsDyes = append(ColorantsDyes, ColorantDye)
 	}
 
 	return ColorantsDyes, nil

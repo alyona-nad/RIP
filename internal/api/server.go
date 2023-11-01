@@ -4,17 +4,23 @@ import (
 	"awesomeProject/internal/app/ds"
 	"awesomeProject/internal/app/dsn"
 	"awesomeProject/internal/app/repository"
+	"io"
 	"log"
 	"net/http"
-	"io"
+
 	//"strings"
+	"strconv"
 	"time"
-    "strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+
 	//"github.com/kljensen/snowball/russian"
 	//"gorm.io/gorm"
+	"github.com/gin-contrib/cors"
 )
+
+//...
 
 func singleton() uint {
 	var user uint
@@ -47,12 +53,12 @@ func AddColorantImage(repository *repository.Repository, c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image"})
 		return
 	}
-*/
-image, err := c.FormFile("image")
-if err != nil || image == nil {
-    c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image"})
-    return
-}
+	*/
+	image, err := c.FormFile("image")
+	if err != nil || image == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image"})
+		return
+	}
 
 	// Чтение содержимого изображения в байтах
 	file, err := image.Open()
@@ -82,10 +88,15 @@ if err != nil || image == nil {
 }
 
 func StartServer() {
+
 	log.Println("Server start up")
 
 	r := gin.Default()
 	r.LoadHTMLGlob("C:/Program Files/Go/src/RIP/templates/*")
+
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:3000"} // Замените этот адрес на ваш фронтенд-домен
+	r.Use(cors.New(config))
 
 	r.Static("/styles", "./internal/css")
 	r.Static("/image", "./resources")
@@ -95,19 +106,18 @@ func StartServer() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	r.GET("/list_of_colorants", func(c *gin.Context) { 
+	r.GET("/list_of_colorants", func(c *gin.Context) {
 
-		
 		filterValue := c.Query("filterValue")
 
-		products, err := repo.FilterColorant(filterValue)
+		products, err := repo.FilterColorant(filterValue, singleton())
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при выполнении запроса к базе данных"})
 			return
 		}
-		
+
 		/*c.HTML(http.StatusOK, "index.tmpl", gin.H{
-			"services":    filteredServices,
+			"services":    products,
 			"filterValue": filterValue,
 		})*/
 		c.JSON(http.StatusOK, products)
@@ -184,11 +194,11 @@ func StartServer() {
 
 	r.GET("/list_of_dyes", func(c *gin.Context) {
 
-		filterDate1 := c.Query("filterDate1")
-		filterDate2 := c.Query("filterDate2")
+		StartDate := c.Query("StartDate")
+		EndDate := c.Query("EndDate")
 		status := c.Query("status")
-		date1, err1 := time.Parse("2006-01-02", filterDate1)
-		date2, err2 := time.Parse("2006-01-02", filterDate2)
+		date1, err1 := time.Parse("2006-01-02", StartDate)
+		date2, err2 := time.Parse("2006-01-02", EndDate)
 		if err1 != nil || err2 != nil {
 		}
 		dyes, err := repo.FilterDyesByDateAndStatus(date1, date2, status)
@@ -254,9 +264,9 @@ func StartServer() {
 		serviceID := c.Param("id")
 		var User []ds.Users
 		User, err := repo.GetAllUsers()
-    if err != nil {
-       panic("failed to get users from DB")
-    }
+		if err != nil {
+			panic("failed to get users from DB")
+		}
 		found := false
 		for _, user := range User {
 			if user.ID_User == singleton() {
@@ -264,7 +274,7 @@ func StartServer() {
 					found = true
 					break
 				}
-			} 
+			}
 		}
 
 		if !found {
@@ -285,9 +295,9 @@ func StartServer() {
 		Status := c.Param("status")
 		var User []ds.Users
 		User, err := repo.GetAllUsers()
-    if err != nil {
-       panic("failed to get users from DB")
-    }
+		if err != nil {
+			panic("failed to get users from DB")
+		}
 		found := false
 		for _, user := range User {
 			if user.ID_User == singleton() {
@@ -295,7 +305,7 @@ func StartServer() {
 					found = true
 					break
 				}
-			} 
+			}
 		}
 
 		if !found {
@@ -385,11 +395,10 @@ func StartServer() {
 		c.JSON(http.StatusOK, Mtm1)
 	})
 	r.PUT("/colorants/:id/addImage", func(c *gin.Context) {
-		AddColorantImage(repo,c)
-	 })
+		AddColorantImage(repo, c)
+	})
 
 	r.Run()
 
 	log.Println("Server down")
 }
- 
