@@ -95,7 +95,7 @@ func StartServer() {
 	r.LoadHTMLGlob("C:/Program Files/Go/src/RIP/templates/*")
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"} // Замените этот адрес на ваш фронтенд-домен
+	config.AllowOrigins = []string{"http://localhost:3000"}
 	r.Use(cors.New(config))
 
 	r.Static("/styles", "./internal/css")
