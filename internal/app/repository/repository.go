@@ -65,6 +65,9 @@ func (r *Repository) DeleteColorant(id string) error {
 }
 
 func (r *Repository) CreateColorant(colorants ds.ColorantsAndOtheres) error {
+	if colorants.Image == "" {
+        colorants.Image = "http://localhost:9000/rip1/defoult.jpg"
+    }
 	err := r.db.Table("colorants_and_otheres").Create(&colorants).Error
 	return err
 }
