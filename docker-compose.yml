@@ -59,6 +59,14 @@ services:
       - data4-1:/data1
       - data4-2:/data2
 
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass password
+    volumes:
+      - redis-data:/data
   nginx: # наш еще один сервис в подсети docker будет nginx 
     image: nginx:1.19.2-alpine # исходники сервиса взять отсюда
     hostname: nginx # hostname внутри подсети docker будет nginx
@@ -74,10 +82,16 @@ services:
       # - minio2
       # - minio3
       # - minio4
+ 
 
+volumes:
+  postgresdb-data:
+    driver: local
+  redis-data:
+    driver: local
 ## По умолчанию в этой конфигурации используется локальный драйвер docker по умолчанию,
 ## Для пользовательских томов замените на конфигурацию драйвера тома.
-volumes:
+##volumes:
   data1-1:
   data1-2:
   data2-1:
@@ -86,3 +100,9 @@ volumes:
   data3-2:
   data4-1:
   data4-2:
+
+  
+ 
+  
+
+  

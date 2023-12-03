@@ -2,15 +2,17 @@ package ds
 
 import (
 	"time"
+	"awesomeProject/internal/app/role"
 )
 
 type Users struct {
 	ID_User       uint `gorm:"primaryKey"`
 	Name          string
+	Login       string    `json:"login"`
 	Phone         string `gorm:"unique"`
 	Email_Address string `gorm:"unique"`
 	Password      string
-	Role          string
+	Role        role.Role
 }
 
 type Dyes struct {

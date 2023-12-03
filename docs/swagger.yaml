@@ -1,0 +1,14 @@
+basePath: /RIP_frontend/
+host: localhost:8080
+info:
+  contact: {}
+  description: colorants app
+  title: Dyes from Colorants
+  version: "1.0"
+paths: {}
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

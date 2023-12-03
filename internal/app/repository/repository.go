@@ -8,6 +8,13 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"awesomeProject/internal/MinioClient"
+	//"github.com/gin-gonic/gin"
+	//"awesomeProject/internal/app/ds/jwt.go"
+	//"encoding/json"
+	//"net/http"
+	//"github.com/golang-jwt/jwt"
+	//"fmt"
+	//"github.com/google/uuid"
 )
 
 type Repository struct {
@@ -404,7 +411,73 @@ func (r *Repository) AddColorantImage(colorantID int, imageBytes []byte, content
     return nil
 }
 
+func (r *Repository) pingHandler(name string,password string)(string) {
+	var User ds.Users
+	err := r.db.Where("name = ? AND password = ?", name, password).First(&User).Error
+	if err != nil {
+		return "403"
+	}
+	return "true"
+}
 
+func (r *Repository) Register(user *ds.Users) error {
+	return r.db.Create(user).Error
+}
 
+func (r *Repository) GetUserByLogin(login string) (*ds.Users, error) {
+	user := &ds.Users{
+		Login: login,
+	}
 
+	err := r.db.Where(user).First(user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+/*func (r *Repository) Login(gCtx *gin.Context) {
+	req := &loginReq{}
+	login :="login"
+	password :="password"
+	err := json.NewDecoder(gCtx.Request.Body).Decode(req)
+	if err != nil {
+		gCtx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	if req.Login == login && req.Password == password {
+		// значит проверка пройдена
+		// генерируем ему jwt
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, &ds.JWTClaims{
+			StandardClaims: jwt.StandardClaims{
+				ExpiresAt: time.Now().Add(time.Hour*72).Unix(),
+				IssuedAt:  time.Now().Unix(),
+				Issuer:    "bitop-admin",
+			},
+			UserUUID: uuid.New(), // test uuid
+			Scopes:   []string{}, // test data
+		})
+
+		if token == nil {
+			gCtx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("token is nil"))
+			return
+		}
+
+		strToken, err := token.SignedString([]byte(cfg.JWT.Token))
+		if err != nil {
+			gCtx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("cant create str token"))
+			return
+		}
+
+		gCtx.JSON(http.StatusOK, loginResp{
+			ExpiresIn:   cfg.JWT.ExpiresIn,
+			AccessToken: strToken,
+			TokenType:   "Bearer",
+		})
+	}
+
+	gCtx.AbortWithStatus(http.StatusForbidden) // отдаем 403 ответ в знак того что доступ запрещен
+}
+*/
 
