@@ -1,14 +1,15 @@
 package api
 
 import (
+	"awesomeProject/internal/app/ds"
+	"awesomeProject/internal/app/role"
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
-	"context"
-	"awesomeProject/internal/app/ds"
-	"awesomeProject/internal/app/role"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt"
@@ -16,7 +17,7 @@ import (
 
 const jwtPrefix = "Bearer "
 
-func (a *Application) WithAuthCheck(assignedRoles /*...*/[2]role.Role) func(ctx *gin.Context) {
+func (a *Application) WithAuthCheck(assignedRoles ... /*[2]*/ role.Role) func(ctx *gin.Context) {
 	return func(gCtx *gin.Context) {
 		jwtStr := gCtx.GetHeader("Authorization")
 		fmt.Println(assignedRoles)
@@ -73,15 +74,15 @@ func (a *Application) WithAuthCheck(assignedRoles /*...*/[2]role.Role) func(ctx 
 		authorized := false
 		fmt.Println(assignedRoles)
 		for _, userRole := range assignedRoles {
-            if myClaims.Role == userRole {
-                authorized = true
-                break
-            }
-        }
+			if myClaims.Role == userRole {
+				authorized = true
+				break
+			}
+		}
 
 		if !authorized {
 			gCtx.AbortWithStatus(http.StatusForbidden)
-			log.Printf("role %s is not assigned in %s", myClaims.Role, assignedRoles)
+			log.Printf("role is not assigned")
 			return
 		}
 

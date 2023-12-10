@@ -28,6 +28,8 @@ type registerResp struct {
 	Ok bool `json:"ok"`
 }
 
+//Register godoc
+//
 // @Summary Registration
 // @Description Registration
 // @Tags auth
@@ -95,6 +97,8 @@ func generateHashString(s string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
+//Logout godoc
+//
 // @Summary Logout
 // @Security ApiKeyAuth
 // @Description Logout
@@ -147,6 +151,8 @@ type loginResp struct {
 	TokenType   string `json:"token_type"`
 }
 
+//Login godoc
+//
 // @Summary Login
 // @Description Login
 // @Tags auth

@@ -46,6 +46,7 @@ if err != nil {
 	}, nil
 }
 
+
 func (r *Repository) GetAllColorant() ([]ds.ColorantsAndOtheres, error) {
 	var colorants []ds.ColorantsAndOtheres
 	err := r.db.Table("colorants_and_otheres").Select("id_colorant, name, image, description, properties,status").Where("status = ?", "Действует").Scan(&colorants).Error
@@ -55,6 +56,7 @@ func (r *Repository) GetAllColorant() ([]ds.ColorantsAndOtheres, error) {
 
 	return colorants, nil
 }
+
 
 func (r *Repository) GetColorantByID(id string) (*ds.ColorantsAndOtheres, error) {
 	colorants := &ds.ColorantsAndOtheres{}
@@ -67,9 +69,11 @@ func (r *Repository) GetColorantByID(id string) (*ds.ColorantsAndOtheres, error)
 	return colorants, nil
 }
 
+
 func (r *Repository) DeleteColorant(id string) error {
 	return r.db.Exec("UPDATE colorants_and_otheres SET status = ? WHERE id_colorant = ?", "удалено", id).Error
 }
+
 
 func (r *Repository) CreateColorant(colorants ds.ColorantsAndOtheres) error {
 	if colorants.Image == "" {
@@ -93,7 +97,6 @@ type Colorants struct {
 	Dyes uint
 }
 
-// func (r *Repository) GetAllDyes() ([]ds.Dyes, error) {
 func (r *Repository) GetAllDyes() ([]DyeWithColorants, error) {
 	var dyes []ds.Dyes
 	err := r.db.Preload("User").Preload("ModeratorUser").Find(&dyes).Where("status = ?", "Действует").Scan(&dyes).Error
@@ -155,7 +158,7 @@ func (r *Repository) GetDyeByID(id string) (DyeWithColorants, error) {
 
 func (r *Repository) DeleteDye(id string, idUser uint) error {
 	var User ds.Users
-	err := r.db.Where("id_user = ? AND Role = ?", idUser, "Пользователь").First(&User).Error
+	err := r.db.Where("id_user = ? AND Role = ?", idUser, 1/*"Пользователь"*/).First(&User).Error
 	if err != nil {
 		panic("Неверный статус пользователя")
 	} else {
@@ -203,7 +206,7 @@ func (r *Repository) UpdateDye(id string, dye *ds.Dyes) error {
 
 func (r *Repository) StatusUser(id string, idUser uint) error {
 	var User ds.Users
-	err := r.db.Where("id_user = ? AND Role = ?", idUser, "Пользователь").First(&User).Error
+	err := r.db.Where("id_user = ? AND Role = ?", idUser, 1/*"Пользователь"*/).First(&User).Error
 	if err != nil {
 		panic("Неверный статус пользователя")
 	} else {
@@ -211,29 +214,10 @@ func (r *Repository) StatusUser(id string, idUser uint) error {
 	}
 }
 
-/*func (r *Repository) StatusModeratorEnd(id string,idUser string) error {
-	var User ds.Users
-	err := r.db.Where("id_user = ? AND Role = ?", idUser, "Модератор").First(&User).Error
-	if err != nil {
-		panic("Неверный статус пользователя")
-	} else {
-	return r.db.Exec("UPDATE dyes SET status = ?, completion_date= ? WHERE id_dye = ? and status=?", "Завершён",time.Now(), id, "Сформирован").Error
-	}
-}
-
-func (r *Repository) StatusModeratorReject(id string,idUser string) error {
-	var User ds.Users
-	err := r.db.Where("id_user = ? AND Role = ?", idUser, "Модератор").First(&User).Error
-	if err != nil {
-		panic("Неверный статус пользователя")
-	} else {
-	return r.db.Exec("UPDATE dyes SET status = ? WHERE id_dye = ? and status=?", "Отклонено", id, "Сформирован").Error
-	}
-}*/
 
 func (r *Repository) StatusModerator(id string, idUser uint, status string) error {
 	var User ds.Users
-	err := r.db.Where("id_user = ? AND Role = ?", idUser, "Модератор").First(&User).Error
+	err := r.db.Where("id_user = ? AND Role = ?", idUser, 2/*"Модератор"*/).First(&User).Error
 	if err != nil {
 		panic("Неверный статус пользователя")
 	} else {
@@ -308,7 +292,34 @@ func (r *Repository) DeleteMtM(idDye string, idColorant string) error {
 	return r.db.Where("id_dye = ? and id_colorant = ?", idDye, idColorant).Delete(&ds.Dye_Colorants{}).Error
 }
 
-func (r *Repository) FilterDyesByDateAndStatus(date1, date2 time.Time, status string) ([]DyeWithColorants, error) {
+func (r *Repository) FilterColorant(name string,id uint) (/*[]ds.ColorantsAndOtheres*/Colorants, error) {//черновик
+	var colorant []ds.ColorantsAndOtheres
+	if name != "" {
+		filterValueNormalized := russian.Stem(name, false)
+	
+	if err := r.db.Where("name ILIKE ? and status = ?", "%"+filterValueNormalized+"%","Действует").Find(&colorant).Error; err != nil {
+		panic("failed to get products from DB")
+	}
+	}  else {
+		if err := r.db.Where("status = ?","Действует").Find(&colorant).Error; err != nil {
+			panic("failed to get products from DB")
+		}
+	}
+
+
+		var DyesIDs uint
+			r.db.Table("dyes").
+			Where("user_id = ? and status=?", id,"Действует").
+			Pluck("id_dye", &DyesIDs)
+			ColorantsDyes := Colorants{
+			Dyes: DyesIDs,
+			Colorants: colorant,
+	}
+
+	return ColorantsDyes, nil
+	//return colorant, nil
+}
+func (r *Repository) FilterDyesByDateAndStatus(date1, date2 time.Time, status string, id uint) ([]DyeWithColorants, error) {
 	var dyeWithColorants []DyeWithColorants
 	var dyes []ds.Dyes
 	query := r.db.
@@ -326,13 +337,17 @@ func (r *Repository) FilterDyesByDateAndStatus(date1, date2 time.Time, status st
 	if status != "" {
 		query = query.Where("Status = ?", status)
 	}
-
+	var User ds.Users
+	err1 := r.db.Where("id_user = ? AND Role = ?", id, 2/*"Модератор"*/).First(&User).Error
+	if err1 != nil {
+		query = query.Where("user_id = ?", id)
+	}
 	err := query.Find(&dyes).Error
 
 	if err != nil {
 		return nil, err
 	}
-
+	
 	for i := range dyes {
 		r.db.Preload("User").Preload("ModeratorUser").Find(&dyes[i])
 
@@ -343,6 +358,7 @@ func (r *Repository) FilterDyesByDateAndStatus(date1, date2 time.Time, status st
 
 		var colorants []ds.ColorantsAndOtheres
 		r.db.Where("id_colorant IN ?", colorantIDs).Find(&colorants)
+	
 		dyeWithColorant := DyeWithColorants{
 			Dyes:      &dyes[i],
 			Colorants: colorants,
@@ -352,45 +368,6 @@ func (r *Repository) FilterDyesByDateAndStatus(date1, date2 time.Time, status st
 
 	return dyeWithColorants, nil
 }
-
-
-func (r *Repository) FilterColorant(name string,id uint) (/*[]ds.ColorantsAndOtheres*/Colorants, error) {//черновик
-	//var ColorantsDyes []Colorants
-	var colorant []ds.ColorantsAndOtheres
-	if name != "" {
-		filterValueNormalized := russian.Stem(name, false)
-	
-	if err := r.db.Where("name ILIKE ? and status = ?", "%"+filterValueNormalized+"%","Действует").Find(&colorant).Error; err != nil {
-		panic("failed to get products from DB")
-	}
-	}  else {
-		if err := r.db.Where("status = ?","Действует").Find(&colorant).Error; err != nil {
-			panic("failed to get products from DB")
-		}
-	}
-
-	//for i := range colorant {
-		//r.db.Preload("User").Preload("ModeratorUser").Find(&dyes[i])
-
-		var DyesIDs uint
-		//r.db.Table("colorants_and_otheres").
-		/*r.db.Table("dye_colorants").
-			Where("id_colorant = ?", colorant[i].ID_Colorant).
-			Pluck("id_dye", &DyesIDs)*/
-			r.db.Table("dyes").
-			Where("user_id = ? and status=?", id,"Действует").
-			Pluck("id_dye", &DyesIDs)
-			ColorantsDyes := Colorants{
-			Dyes: DyesIDs,
-			Colorants: colorant,
-		//}
-		//ColorantsDyes = append(ColorantsDyes, ColorantDye)
-	}
-
-	return ColorantsDyes, nil
-	//return colorant, nil
-}
-
 func (r *Repository) AddColorantImage(colorantID int, imageBytes []byte, contentType string) error {
     err := r.minioClient.RemoveServiceImage(colorantID)
     if err != nil {
@@ -411,14 +388,6 @@ func (r *Repository) AddColorantImage(colorantID int, imageBytes []byte, content
     return nil
 }
 
-func (r *Repository) pingHandler(name string,password string)(string) {
-	var User ds.Users
-	err := r.db.Where("name = ? AND password = ?", name, password).First(&User).Error
-	if err != nil {
-		return "403"
-	}
-	return "true"
-}
 
 func (r *Repository) Register(user *ds.Users) error {
 	return r.db.Create(user).Error
@@ -437,47 +406,11 @@ func (r *Repository) GetUserByLogin(login string) (*ds.Users, error) {
 	return user, nil
 }
 
-/*func (r *Repository) Login(gCtx *gin.Context) {
-	req := &loginReq{}
-	login :="login"
-	password :="password"
-	err := json.NewDecoder(gCtx.Request.Body).Decode(req)
-	if err != nil {
-		gCtx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-	if req.Login == login && req.Password == password {
-		// значит проверка пройдена
-		// генерируем ему jwt
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, &ds.JWTClaims{
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Hour*72).Unix(),
-				IssuedAt:  time.Now().Unix(),
-				Issuer:    "bitop-admin",
-			},
-			UserUUID: uuid.New(), // test uuid
-			Scopes:   []string{}, // test data
-		})
 
-		if token == nil {
-			gCtx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("token is nil"))
-			return
-		}
 
-		strToken, err := token.SignedString([]byte(cfg.JWT.Token))
-		if err != nil {
-			gCtx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("cant create str token"))
-			return
-		}
 
-		gCtx.JSON(http.StatusOK, loginResp{
-			ExpiresIn:   cfg.JWT.ExpiresIn,
-			AccessToken: strToken,
-			TokenType:   "Bearer",
-		})
-	}
 
-	gCtx.AbortWithStatus(http.StatusForbidden) // отдаем 403 ответ в знак того что доступ запрещен
-}
-*/
+
+
+
 

@@ -11,11 +11,7 @@ import (
 // @description colorants app
 
 // @host localhost:8080
-// @BasePath /RIP_frontend/
-
-// @securityDefinitions.apikey ApiKeyAuth
-// @in header
-// @name Authorization
+// @BasePath /
 func main() {
 	log.Println("Application start!")
 	application, err := app.New()
