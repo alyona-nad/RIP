@@ -26,7 +26,7 @@ type Dyes struct {
 	CompletionDate time.Time
 	Moderator      uint
 	ModeratorUser  Users                 `gorm:"foreignKey:Moderator"`
-	//Colorants      []ColorantsAndOtheres //`gorm:"many2many:Dye_Colorants;"`
+	Price uint
 }
 type ColorantsAndOtheres struct {
 	ID_Colorant int64 `gorm:"primaryKey;autoIncrement"`

@@ -46,7 +46,7 @@ func (a *Application) StartServer() {
 
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:3000"}
-	//config.AllowOrigins = []string{"http://localhost:1420"}
+	//config.AllowOrigins = []string{"http://192.168.1.23:3000"}
 	r.Use(cors.New(config))
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.Static("/styles", "./internal/css")
@@ -73,11 +73,12 @@ func (a *Application) StartServer() {
 	r.DELETE("/delete-service/:id", a.WithAuthCheck(role.Moderator), a.DeletionColorant)
 	r.PUT("/update_colorants/:id", a.WithAuthCheck(role.Moderator), a.UpdationColorant)
 	r.POST("/new_colorant", a.WithAuthCheck(role.Moderator), a.Creation)
-	r.POST("/colorant/:id", a.WithAuthCheck(role.User), a.AddColorantInDye)
+	r.POST("/colorant/:id", a.WithAuthCheck(role.User,role.Moderator), a.AddColorantInDye)
 	r.POST("/:id/addImage", a.WithAuthCheck(role.Moderator), a.Add_Image)
 	r.GET("/list_of_dyes", a.WithAuthCheck(role.User, role.Moderator), a.FilterDyes)
 	r.DELETE("/delete-dye/:id", a.WithAuthCheck(role.User), a.DeletionDye)
 	r.PUT("/update_dyes/:id", a.WithAuthCheck(role.Moderator), a.DyeUpdation)
+	r.PUT("/update_dyes/:id/put", a.DyeUpdationPrice)
 	r.PUT("/formation-dye/:id", a.WithAuthCheck(role.User), a.Status_User)
 	r.PUT("/dyeid/:id/status/:status", a.WithAuthCheck(role.Moderator), a.Status_Moderator)
 	r.DELETE("/delete-MtM/:idDye/colorant/:idColorant", a.WithAuthCheck(role.User), a.DeletionMtM)
@@ -126,6 +127,7 @@ func (a *Application) FilterDyes(c *gin.Context) {
 	date1, err1 := time.Parse("2006-01-02", StartDate)
 	date2, err2 := time.Parse("2006-01-02", EndDate)
 	userID := a.ParseUserID(c)
+	
 	if err1 != nil || err2 != nil {
 	}
 	dyes, err := a.repository.FilterDyesByDateAndStatus(date1, date2, status, userID)
@@ -226,6 +228,7 @@ func (a *Application) Colorant_by_ID(c *gin.Context) {
 		panic("failed to get products from DB")
 	}
 	log.Println(product)
+	c.Header("Content-Type", "application/json; charset=utf-8")
 	c.JSON(http.StatusOK, product)
 }
 
@@ -246,6 +249,7 @@ func (a *Application) Get_All_Colorant(c *gin.Context) {
 
 	filterValue := c.Query("filterValue")
 	userID := a.ParseUserID(c)
+	//log.Println(userID)
 	products, err := a.repository.FilterColorant(filterValue, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при выполнении запроса к базе данных"})
@@ -308,6 +312,40 @@ func (a *Application) DeletionDye(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, products)
+}
+
+type UpdateDyeRequest struct {
+    Price uint `json:"Price"`
+	Key string
+}
+
+func (a *Application)DyeUpdationPrice(c *gin.Context) {
+	serviceID := c.Param("id")
+	var request UpdateDyeRequest
+    
+    
+    if err := c.BindJSON(&request); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON data"})
+        return
+    }
+
+    log.Println("Price")
+    log.Println(request.Price)
+if request.Key=="123456"{
+    err := a.repository.UpdateDyePrice(serviceID, request.Price)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update service"})
+        return
+    }
+	dye, err := a.repository.GetDyeByID(serviceID)
+	if err != nil {
+		panic("failed to get products from DB")
+	}
+
+	c.JSON(http.StatusOK, dye)} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Incorrect key"})
+        return
+	}
 }
 
 func (a *Application) DyeUpdation(c *gin.Context) {
@@ -430,6 +468,7 @@ func (a *Application) OneOfDyes(c *gin.Context) {
 	if err != nil {
 		panic("failed to get products from DB")
 	}
+	//c.Header("Content-Type", "application/json; charset=utf-8")
 	c.JSON(http.StatusOK, dye)
 }
 
