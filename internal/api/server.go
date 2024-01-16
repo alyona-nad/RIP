@@ -46,18 +46,12 @@ func (a *Application) StartServer() {
 
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:3000"}
-	//config.AllowOrigins = []string{"http://192.168.1.23:3000"}
 	r.Use(cors.New(config))
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.Static("/styles", "./internal/css")
 	r.Static("/image", "./resources")
 	_ = godotenv.Load()
 	
-
-	/*repo, err := repository.New(dsn.FromEnv())
-	if err != nil {
-		panic("failed to connect database")
-	}*/
 
 	AuthGroup := r.Group("/auth")
 	{

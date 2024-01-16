@@ -470,15 +470,14 @@ func (r *Repository) GetUserByLogin(login string) (*ds.Users, error) {
 	return user, nil
 }
 
-func (r *Repository) DeleteActiveRequest(userID uint) error {
+func (r *Repository) DeleteActiveDye(userID uint) error {
 
 	dye := &ds.Dyes{}
 	err := r.db.Find(dye, "status = 'Действует' AND user_id = ?", userID).Error
 	if err != nil {
 		return err
 	}
-
-	return r.db.Exec("UPDATE requests SET status = 'Удалено' WHERE id=? AND user_id=?", dye.ID_Dye, userID).Error
+	return r.db.Exec("UPDATE dyes SET status = 'Удалено' WHERE id_dye=? AND user_id=?", dye.ID_Dye, userID).Error
 
 }
 

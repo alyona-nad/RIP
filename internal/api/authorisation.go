@@ -181,7 +181,9 @@ func (a *Application) Logout(gCtx *gin.Context) {
 
 		return
 	}
-
+	userID := a.ParseUserID(gCtx)
+	a.repository.DeleteActiveDye(userID)
+	
 	gCtx.Status(http.StatusOK)
 }
 
