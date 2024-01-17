@@ -17,9 +17,10 @@ import (
 	//"strings"
 	"strconv"
 	"time"
+	_ "RIP/docs"
 
 	//"fmt"
-	_ "awesomeProject/docs"
+	//_ "awesomeProject/docs"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"

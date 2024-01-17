@@ -200,8 +200,8 @@ type loginResp struct {
 }
 
 // @Summary Login
-// @Description Login
 // @Tags auth
+// @Description Login
 // @ID login
 // @Accept json
 // @Produce json
