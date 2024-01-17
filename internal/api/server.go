@@ -47,11 +47,17 @@ func (a *Application) StartServer() {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:3000"}
 	r.Use(cors.New(config))
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Authorization")
+		c.Next()
+	})
+
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.Static("/styles", "./internal/css")
 	r.Static("/image", "./resources")
 	_ = godotenv.Load()
-	
 
 	AuthGroup := r.Group("/auth")
 	{
@@ -67,15 +73,15 @@ func (a *Application) StartServer() {
 	r.DELETE("/delete-service/:id", a.WithAuthCheck(role.Moderator), a.DeletionColorant)
 	r.PUT("/update_colorants/:id", a.WithAuthCheck(role.Moderator), a.UpdationColorant)
 	r.POST("/new_colorant", a.WithAuthCheck(role.Moderator), a.Creation)
-	r.POST("/colorant/:id", a.WithAuthCheck(role.User,role.Moderator), a.AddColorantInDye)
+	r.POST("/colorant/:id", a.WithAuthCheck(role.User, role.Moderator), a.AddColorantInDye)
 	r.POST("/:id/addImage", a.WithAuthCheck(role.Moderator), a.Add_Image)
 	r.GET("/list_of_dyes", a.WithAuthCheck(role.User, role.Moderator), a.FilterDyes)
-	r.DELETE("/delete-dye/:id", a.WithAuthCheck(role.User), a.DeletionDye)
+	r.DELETE("/delete-dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.DeletionDye)
 	r.PUT("/update_dyes/:id", a.WithAuthCheck(role.Moderator), a.DyeUpdation)
 	r.PUT("/update_dyes/:id/put", a.DyeUpdationPrice)
-	r.PUT("/formation-dye/:id", a.WithAuthCheck(role.User), a.Status_User)
+	r.PUT("/formation-dye/:id", a.WithAuthCheck(role.User,role.Moderator), a.Status_User)
 	r.PUT("/dyeid/:id/status/:status", a.WithAuthCheck(role.Moderator), a.Status_Moderator)
-	r.DELETE("/delete-MtM/:idDye/colorant/:idColorant", a.WithAuthCheck(role.User), a.DeletionMtM)
+	r.DELETE("/delete-MtM/:idDye/colorant/:idColorant", a.WithAuthCheck(role.User, role.Moderator), a.DeletionMtM)
 	r.PUT("/update_many_to_many/:idDye/colorant/:idColorant", a.WithAuthCheck(role.Moderator), a.UpdationMtM)
 	r.GET("/dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.OneOfDyes)
 	/*r.POST("/users", func(c *gin.Context) {
@@ -121,7 +127,7 @@ func (a *Application) FilterDyes(c *gin.Context) {
 	date1, err1 := time.Parse("2006-01-02", StartDate)
 	date2, err2 := time.Parse("2006-01-02", EndDate)
 	userID := a.ParseUserID(c)
-	
+
 	if err1 != nil || err2 != nil {
 	}
 	dyes, err := a.repository.FilterDyesByDateAndStatus(date1, date2, status, userID)
@@ -309,36 +315,36 @@ func (a *Application) DeletionDye(c *gin.Context) {
 }
 
 type UpdateDyeRequest struct {
-    Price uint `json:"Price"`
-	Key string
+	Price uint `json:"Price"`
+	Key   string
 }
 
-func (a *Application)DyeUpdationPrice(c *gin.Context) {
+func (a *Application) DyeUpdationPrice(c *gin.Context) {
 	serviceID := c.Param("id")
 	var request UpdateDyeRequest
-    
-    
-    if err := c.BindJSON(&request); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON data"})
-        return
-    }
 
-    log.Println("Price")
-    log.Println(request.Price)
-if request.Key=="123456"{
-    err := a.repository.UpdateDyePrice(serviceID, request.Price)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update service"})
-        return
-    }
-	dye, err := a.repository.GetDyeByID(serviceID)
-	if err != nil {
-		panic("failed to get products from DB")
+	if err := c.BindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON data"})
+		return
 	}
 
-	c.JSON(http.StatusOK, dye)} else {
+	log.Println("Price")
+	log.Println(request.Price)
+	if request.Key == "123456" {
+		err := a.repository.UpdateDyePrice(serviceID, request.Price)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update service"})
+			return
+		}
+		dye, err := a.repository.GetDyeByID(serviceID)
+		if err != nil {
+			panic("failed to get products from DB")
+		}
+
+		c.JSON(http.StatusOK, dye)
+	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Incorrect key"})
-        return
+		return
 	}
 }
 
@@ -371,10 +377,10 @@ func (a *Application) Status_User(c *gin.Context) {
 	userID := a.ParseUserID(c)
 	for _, user := range User {
 		if user.ID_User == userID {
-			if user.Role == role.User {
+			
 				found = true
 				break
-			}
+			
 		}
 	}
 

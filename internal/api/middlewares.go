@@ -92,6 +92,8 @@ const jwtPrefix = "Bearer "
 func (a *Application) WithAuthCheck(assignedRoles ...role.Role) func(ctx *gin.Context) {
 	return func(gCtx *gin.Context) {
 		jwtStr := gCtx.GetHeader("Authorization")
+		fmt.Println(1234)
+		fmt.Println(jwtStr)
 		fmt.Println(gCtx.Request.URL.Path)
 		fmt.Println(12)
 		//fmt.Println(strings.HasPrefix(gCtx.Request.URL.Path, "/consultations/?maxPrice"))
@@ -105,6 +107,7 @@ func (a *Application) WithAuthCheck(assignedRoles ...role.Role) func(ctx *gin.Co
 			fmt.Println(jwtStr)*/
 			if !strings.HasPrefix(jwtStr, jwtPrefix) { // если нет префикса то нас дурят!
 				fmt.Println("ПЛОХО 1")
+				fmt.Println(jwtStr)
 				gCtx.AbortWithStatus(http.StatusForbidden) // отдаем что нет доступа
 
 				return // завершаем обработку

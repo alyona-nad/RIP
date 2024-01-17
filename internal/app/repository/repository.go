@@ -183,7 +183,7 @@ func (r *Repository) CreateDye(idcolorant string, idUser uint) error {
 			Status:       "Действует",
 			Name:         "Гуашь",
 			CreationDate: time.Now(),
-			Moderator:    idUser,
+			Moderator:    4,
 		}
 		if err := r.db.Create(&newDye).Error; err != nil {
 			return err
@@ -268,7 +268,7 @@ func (r *Repository) UpdateDyePrice(id string, price uint) error {
 
 func (r *Repository) StatusUser(id string, idUser uint) error {
 	var User ds.Users
-	err := r.db.Where("id_user = ? AND Role = ?", idUser, 1/*"Пользователь"*/).First(&User).Error
+	err := r.db.Where("id_user = ?", idUser).First(&User).Error
 	if err != nil {
 		panic("Неверный статус пользователя")
 	} else {
@@ -356,15 +356,24 @@ func (r *Repository) DeleteMtM(idDye string, idColorant string) error {
 
 func (r *Repository) FilterColorant(name string,id uint) (/*[]ds.ColorantsAndOtheres*/Colorants, error) {//черновик
 	var colorant []ds.ColorantsAndOtheres
+	var User ds.Users
 	if name != "" {
 		filterValueNormalized := russian.Stem(name, false)
-	
+	if  r.db.Where("id_user = ? AND Role = ?", id, 2).First(&User).Error!=nil{
 	if err := r.db.Where("name ILIKE ? and status = ?", "%"+filterValueNormalized+"%","Действует").Find(&colorant).Error; err != nil {
 		panic("failed to get products from DB")
-	}
-	}  else {
+	} }else {
+		if err := r.db.Where("name ILIKE ?", "%"+filterValueNormalized+"%").Find(&colorant).Error; err != nil {
+			panic("failed to get products from DB")
+		}
+	}} else {
+		if  r.db.Where("id_user = ? AND Role = ?", id, 2).First(&User).Error!=nil{
 		if err := r.db.Where("status = ?","Действует").Find(&colorant).Error; err != nil {
 			panic("failed to get products from DB")
+		} } else {
+			if err := r.db.Find(&colorant).Error; err != nil {
+				panic("failed to get products from DB")
+			}
 		}
 	}
 
@@ -380,7 +389,6 @@ func (r *Repository) FilterColorant(name string,id uint) (/*[]ds.ColorantsAndOth
 	}
 
 	return ColorantsDyes, nil
-	//return colorant, nil
 }
 func (r *Repository) FilterDyesByDateAndStatus(date1, date2 time.Time, status string, id uint) ([]DyeWithColorants, error) {
 	var dyeWithColorants []DyeWithColorants
