@@ -32,7 +32,7 @@ type ColorantsAndOtheres struct {
 	ID_Colorant int64 `gorm:"primaryKey;autoIncrement"`
 	Name        string
 	Image       string
-	Link        string
+	//Link        string
 	Description string
 	Properties  string
 	Status      string
