@@ -1,9 +1,638 @@
 basePath: /
+definitions:
+  app.loginReq:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  app.loginResp:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      token_type:
+        type: string
+    type: object
+  app.registerResp:
+    properties:
+      ok:
+        type: boolean
+    type: object
+  ds.ColorantsAndOtheres:
+    properties:
+      Name:
+        type: string
+      ID_Colorant:
+        type: integer
+      image:
+        type: string
+      Description:
+        type: string
+      Properties:
+        type: integer
+      Status:
+        type: string
+    type: object
+  ds.Dyes:
+    properties:
+      ID_Dye:
+        type: integer
+      Name:
+        type: string
+      CreationDate:
+        type: string
+      FormationDate:
+        type: string
+      CompletionDate:
+        type: string
+      Moderator:
+        type: integer
+      startDate:
+        type: string
+      Status:
+        type: string
+      User_ID:
+        type: integer
+      Price:
+       type: integer
+    type: object
+  ds.StatusData:
+    properties:
+      status:
+        type: string
+    type: object
+  ds.User:
+    properties:
+      Email_Address:
+        type: string
+      ID_User:
+        type: integer
+      Name:
+        type: string
+      Login:
+        type: string
+      Password:
+        type: string
+      Phone:
+        type: string
+      Role:
+        $ref: '#/definitions/role.Role'
+    type: object
+  role.Role:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-comments:
+      Admin: "2"
+      Buyer: "0"
+      Manager: "1"
+    x-enum-varnames:
+    - Buyer
+    - Manager
+    - Admin
 host: localhost:8080
 info:
   contact: {}
-  description: colorants app
-  title: Dyes from Colorants
+  description: Colorants app
+  title: Производство красок
   version: "1.0"
-paths: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Логин
+      parameters:
+      - description: login info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/app.loginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.loginResp'
+      summary: Вход в аккаунт
+      tags:
+      - auth
+  /auth/logout:
+    get:
+      description: Выход из аккаунта
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Выход из аккаунта
+      tags:
+      - auth
+  /auth/registration:
+    post:
+      consumes:
+      - application/json
+      description: Регистрация
+      parameters:
+      - description: Информация о пользователе
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/ds.Users'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.registerResp'
+      summary: Registration
+      tags:
+      - auth
+  delete-MtM/{idDye}/colorant/{idColorant}:
+    delete:
+      consumes:
+      - application/json
+      description: Удалить краситель из заявки
+      parameters:
+      - description: ID красителя
+        in: path
+        name: idColorant
+        required: true
+        type: integer
+      - description: ID заявки
+        in: path
+        name: idDye
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Краситель был удален из заявки
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            type: string
+        "404":
+          description: Некорректный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить краситель из заявки
+      tags:
+      - Colorant-Dye
+  /list_of_colorants:
+    get:
+      description: Вывести список красителей
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+      summary: Вывести список красителей
+      tags:
+      - Colorants
+  /colorant/{id}:
+    post:
+      consumes:
+      - application/json
+      description: Добавить краситель в заявку
+      parameters:
+      - description: ID красителя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить краситель в заявку
+      tags:
+      - Colorants
+  /{id}/addImage:
+    post:
+      consumes:
+      - application/json
+      description: Добавить изображение к красителю
+      parameters:
+      - description: ID красителя
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Файл изображения
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить изображение к красителю
+      tags:
+      - Colorants
+  /new_colorant:
+    post:
+      consumes:
+      - application/json
+      description: Создать краситель
+      parameters:
+      - description: Информация о красителе
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/ds.ColorantsAndOtheres'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+      security:
+      - ApiKeyAuth: []
+      summary: Создать краситель
+      tags:
+      - Colorants
+  /delete-service/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удалить краситель
+      parameters:
+      - description: ID красителя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить краситель
+      tags:
+      - Colorants
+  /{id}:
+    get:
+      consumes:
+      - application/json
+      description: Показать краситель по ID
+      parameters:
+      - description: ID красителя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+      summary: Показать краситель по ID
+      tags:
+      - Colorants
+  /update_colorants/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Обновить краситель
+      parameters:
+      - description: ID красителя
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Информация о красителе
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/ds.ColorantsAndOtheres'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.ColorantsAndOtheres'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить краситель
+      tags:
+      - Colorants
+  /list_of_dyes:
+    get:
+      description: Вывести список заявок
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+      security:
+      - ApiKeyAuth: []
+      summary: Вывести список заявок
+      tags:
+      - Dyes
+  /dyeid/{id}/status/{status}:
+    put:
+      consumes:
+      - application/json
+      description: Обновить статус модератором
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Статус
+        in: path
+        name: status
+        required: true
+        type: string
+      - description: Информация о статусе
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/ds.StatusData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить статус модератором
+      tags:
+      - Dyes
+  /formation-dye/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Сформировать заявку
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+      security:
+      - ApiKeyAuth: []
+      summary: Сформировать заявку
+      tags:
+      - Dyes
+  /delete-dye/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удалить заявку
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить заявку
+      tags:
+      - Dyes
+  /update_dyes/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Обновить заявку
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Информация о заявке
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/ds.Dyes'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "404":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/ds.Dyes'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить заявку
+      tags:
+      - Dyes
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -2,35 +2,21 @@ package api
 
 import (
 	"awesomeProject/internal/app/ds"
-	//"awesomeProject/internal/app/dsn"
 	"awesomeProject/internal/app/repository"
-
 	"awesomeProject/internal/app/role"
 	"io"
 	"log"
 	"net/http"
-
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-
-	//"github.com/golang-jwt/jwt"
-	//"strings"
 	"strconv"
 	"time"
 	_ "RIP/docs"
-
-	//"fmt"
-	//_ "awesomeProject/docs"
-
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-
-	//"github.com/google/uuid"
-	//"github.com/kljensen/snowball/russian"
-	//"gorm.io/gorm"
 	"github.com/gin-contrib/cors"
-	//"encoding/json"
+	
 )
 
 type DyeWithColorants struct {
@@ -46,7 +32,7 @@ func (a *Application) StartServer() {
 	r.LoadHTMLGlob("C:/Program Files/Go/src/RIP/templates/*")
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowOrigins = []string{"http://localhost:3000","http://localhost:7000"}
 	r.Use(cors.New(config))
 	r.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
@@ -70,56 +56,38 @@ func (a *Application) StartServer() {
 
 	r.GET("/list_of_colorants", a.Get_All_Colorant)
 	r.GET("/:id", a.Colorant_by_ID)
-	//ColorantGroup.Use(a.WithAuthCheck(role.User)).GET("/request/:id", c.GetConsultationsByRequestID)
 	r.DELETE("/delete-service/:id", a.WithAuthCheck(role.Moderator), a.DeletionColorant)
 	r.PUT("/update_colorants/:id", a.WithAuthCheck(role.Moderator), a.UpdationColorant)
 	r.POST("/new_colorant", a.WithAuthCheck(role.Moderator), a.Creation)
 	r.POST("/colorant/:id", a.WithAuthCheck(role.User, role.Moderator), a.AddColorantInDye)
 	r.POST("/:id/addImage", a.WithAuthCheck(role.Moderator), a.Add_Image)
+	
 	r.GET("/list_of_dyes", a.WithAuthCheck(role.User, role.Moderator), a.FilterDyes)
+	r.GET("/dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.OneOfDyes)
 	r.DELETE("/delete-dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.DeletionDye)
 	r.PUT("/update_dyes/:id", a.WithAuthCheck(role.Moderator), a.DyeUpdation)
 	r.PUT("/update_dyes/:id/put", a.DyeUpdationPrice)
 	r.PUT("/formation-dye/:id", a.WithAuthCheck(role.User,role.Moderator), a.Status_User)
 	r.PUT("/dyeid/:id/status/:status", a.WithAuthCheck(role.Moderator), a.Status_Moderator)
+	
 	r.DELETE("/delete-MtM/:idDye/colorant/:idColorant", a.WithAuthCheck(role.User, role.Moderator), a.DeletionMtM)
 	r.PUT("/update_many_to_many/:idDye/colorant/:idColorant", a.WithAuthCheck(role.Moderator), a.UpdationMtM)
-	r.GET("/dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.OneOfDyes)
-	/*r.POST("/users", func(c *gin.Context) {
-		var newUser ds.Users
-		c.BindJSON(&newUser)
-		err := repo.CreateUser(newUser)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create service"})
-			return
-		}
-
-		users, err := repo.GetAllUsers()
-		if err != nil {
-			panic("failed to get products from DB")
-		}
-
-		c.JSON(http.StatusOK, users)
-
-	})*/
+	
 	r.Run()
 
 	log.Println("Server down")
 }
 
-// FilterDyes godoc
-//
-// @Summary Get Dyes
+// @Summary Вывести список заявок
 // @Security ApiKeyAuth
-// @Description Get all Dyes
+// @Description Вывести список заявок
 // @Tags Dyes
-// @ID get-Dyes
 // @Produce json
 // @Success 200 {object} ds.Dyes
 // @Failure 400 {object} ds.Dyes "Некорректный запрос"
 // @Failure 404 {object} ds.Dyes "Некорректный запрос"
 // @Failure 500 {object} ds.Dyes "Ошибка сервера"
-// @Router /Dyes/list_of_dyes [get]
+// @Router /list_of_dyes [get]
 func (a *Application) FilterDyes(c *gin.Context) {
 
 	StartDate := c.Query("StartDate")
@@ -139,19 +107,30 @@ func (a *Application) FilterDyes(c *gin.Context) {
 	c.JSON(http.StatusOK, dyes)
 }
 
+// @Summary Добавить изображение к красителю
+// @Security ApiKeyAuth
+// @Description Добавить изображение к красителю
+// @Tags Colorants
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID красителя"
+// @Param image formData file true "Файл изображения"
+// @Success 200 {string} string
+// @Failure 400 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 404 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 500 {object} ds.ColorantsAndOtheres "Ошибка сервера"
+// @Router /{id}/addImage [post]
 func (a *Application) Add_Image(c *gin.Context) {
 	AddColorantImage(a.repository, c)
 }
 
-// Creation godoc
-//
-// @Summary create colorant
+// @Summary Создать краситель
 // @Security ApiKeyAuth
-// @Description create colorant
+// @Description Создать краситель
 // @Tags Colorants
-// @ID create-colorant
 // @Accept json
 // @Produce json
+// @Param input body ds.ColorantsAndOtheres true "Информация о красителе"
 // @Success 200 {string} string
 // @Failure 400 {object} ds.ColorantsAndOtheres "Некорректный запрос"
 // @Failure 404 {object} ds.ColorantsAndOtheres "Некорректный запрос"
@@ -174,19 +153,17 @@ func (a *Application) Creation(c *gin.Context) {
 	c.JSON(http.StatusOK, products)
 }
 
-// DeletionColorant godoc
-//
-// @Summary Удалить краситель по ID
+// @Summary Удалить краситель
 // @Security ApiKeyAuth
-// @Description Удалить краситель по его уникальному идентификатору
+// @Description Удалить краситель
 // @Tags Colorants
-// @ID delete-colorant
-// @Produce json
-// @Param id path string true "ID красителя"
-// @Success 200 {object} ds.SuccessResponse
-// @Failure 400 {object} ds.ErrorResponse "Некорректный запрос"
-// @Failure 404 {object} ds.ErrorResponse "Краситель не найден"
-// @Failure 500 {object} ds.ErrorResponse "Ошибка сервера"
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID красителя"
+// @Success 200 {string} string
+// @Failure 400 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 404 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 500 {object} ds.ColorantsAndOtheres "Ошибка сервера"
 // @Router /delete-service/{id} [delete]
 func (a *Application) DeletionColorant(c *gin.Context) {
 	serviceID := c.Param("id")
@@ -207,19 +184,16 @@ func (a *Application) DeletionColorant(c *gin.Context) {
 	c.JSON(http.StatusOK, products)
 }
 
-// Colorant_by_ID godoc
-//
-// @Summary Получить информацию о красителе по ID
-// @Security ApiKeyAuth
-// @Description Получить информацию о красителе по его уникальному идентификатору
+// @Summary Показать краситель по ID
+// @Description Показать краситель по ID
 // @Tags Colorants
-// @ID get-colorant-by-id
-// @Produce json
-// @Param id path string true "ID красителя"
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID красителя"
 // @Success 200 {object} ds.ColorantsAndOtheres
-// @Failure 400 {object} ds.ErrorResponse "Некорректный запрос"
-// @Failure 404 {object} ds.ErrorResponse "Краситель не найден"
-// @Failure 500 {object} ds.ErrorResponse "Ошибка сервера"
+// @Failure 400 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 404 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 500 {object} ds.ColorantsAndOtheres "Ошибка сервера"
 // @Router /{id} [get]
 func (a *Application) Colorant_by_ID(c *gin.Context) {
 	productName := c.Param("id")
@@ -233,13 +207,9 @@ func (a *Application) Colorant_by_ID(c *gin.Context) {
 	c.JSON(http.StatusOK, product)
 }
 
-// Get_All_Colorant godoc
-//
-// @Summary Get All Colorant
-// @Security ApiKeyAuth
-// @Description Get all colorants
+// @Summary Вывести список красителей
+// @Description Вывести список красителей
 // @Tags Colorants
-// @ID get-colorants
 // @Produce json
 // @Success 200 {object} ds.ColorantsAndOtheres
 // @Failure 400 {object} ds.ColorantsAndOtheres "Некорректный запрос"
@@ -250,7 +220,6 @@ func (a *Application) Get_All_Colorant(c *gin.Context) {
 
 	filterValue := c.Query("filterValue")
 	userID := a.ParseUserID(c)
-	//log.Println(userID)
 	products, err := a.repository.FilterColorant(filterValue, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при выполнении запроса к базе данных"})
@@ -259,6 +228,19 @@ func (a *Application) Get_All_Colorant(c *gin.Context) {
 	c.JSON(http.StatusOK, products)
 }
 
+// @Summary Обновить краситель
+// @Security ApiKeyAuth
+// @Description Обновить краситель
+// @Tags Colorants
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID красителя"
+// @Param input body ds.ColorantsAndOtheres true "Информация о красителе"
+// @Success 200 {string} string
+// @Failure 400 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 404 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 500 {object} ds.ColorantsAndOtheres "Ошибка сервера"
+// @Router /update_colorants/{id} [put]
 func (a *Application) UpdationColorant(c *gin.Context) {
 	serviceID := c.Param("id")
 	var newService ds.ColorantsAndOtheres
@@ -278,6 +260,18 @@ func (a *Application) UpdationColorant(c *gin.Context) {
 
 }
 
+// @Summary Добавить краситель в заявку
+// @Security ApiKeyAuth
+// @Description Добавить краситель в заявку
+// @Tags Colorants
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID красителя"
+// @Success 200 {string} string
+// @Failure 400 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 404 {object} ds.ColorantsAndOtheres "Некорректный запрос"
+// @Failure 500 {object} ds.ColorantsAndOtheres "Ошибка сервера"
+// @Router /colorant/{id} [post]
 func (a *Application) AddColorantInDye(c *gin.Context) {
 	productName := c.Param("id")
 	userID := a.ParseUserID(c)
@@ -296,6 +290,18 @@ func (a *Application) AddColorantInDye(c *gin.Context) {
 
 }
 
+// @Summary Удалить заявку
+// @Security ApiKeyAuth
+// @Description Удалить заявку
+// @Tags Dyes
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID заявки"
+// @Success 200 {string} string
+// @Failure 400 {object} ds.Dyes "Некорректный запрос"
+// @Failure 404 {object} ds.Dyes "Некорректный запрос"
+// @Failure 500 {object} ds.Dyes "Ошибка сервера"
+// @Router /delete-dye/{id} [delete]
 func (a *Application) DeletionDye(c *gin.Context) {
 	serviceID := c.Param("id")
 	userID := a.ParseUserID(c)
@@ -349,6 +355,19 @@ func (a *Application) DyeUpdationPrice(c *gin.Context) {
 	}
 }
 
+// @Summary Обновить заявку
+// @Security ApiKeyAuth
+// @Description Обновить заявку
+// @Tags Dyes
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID заявки"
+// @Param input body ds.Dyes true "Информация о заявке"
+// @Success 200 {string} string
+// @Failure 400 {object} ds.Dyes "Некорректный запрос"
+// @Failure 404 {object} ds.Dyes "Некорректный запрос"
+// @Failure 500 {object} ds.Dyes "Ошибка сервера"
+// @Router /update_dyes/{id} [put]
 func (a *Application) DyeUpdation(c *gin.Context) {
 	serviceID := c.Param("id")
 	var dyes ds.Dyes
@@ -367,6 +386,18 @@ func (a *Application) DyeUpdation(c *gin.Context) {
 	c.JSON(http.StatusOK, dye)
 }
 
+// @Summary Сформировать заявку
+// @Security ApiKeyAuth
+// @Description Сформировать заявку
+// @Tags Dyes
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID заявки"
+// @Success 200 {string} string
+// @Failure 400 {object} ds.Dyes "Некорректный запрос"
+// @Failure 404 {object} ds.Dyes "Некорректный запрос"
+// @Failure 500 {object} ds.Dyes "Ошибка сервера"
+// @Router /formation-dye/{id} [put]
 func (a *Application) Status_User(c *gin.Context) {
 	serviceID := c.Param("id")
 	var User []ds.Users
@@ -378,7 +409,7 @@ func (a *Application) Status_User(c *gin.Context) {
 	userID := a.ParseUserID(c)
 	for _, user := range User {
 		if user.ID_User == userID {
-			
+
 				found = true
 				break
 			
@@ -397,6 +428,20 @@ func (a *Application) Status_User(c *gin.Context) {
 	c.JSON(http.StatusOK, dyes)
 }
 
+// @Summary Обновить статус модератором
+// @Security ApiKeyAuth
+// @Description Обновить статус модератором
+// @Tags Dyes
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID заявки"
+// @Param        status   path      string  true  "Статус"
+// @Param input body ds.StatusData true "Информация о статусе"
+// @Success 200 {string} string
+// @Failure 400 {object} ds.Dyes "Некорректный запрос"
+// @Failure 404 {object} ds.Dyes "Некорректный запрос"
+// @Failure 500 {object} ds.Dyes "Ошибка сервера"
+// @Router /dyeid/{id}/status/{status} [put]
 func (a *Application) Status_Moderator(c *gin.Context) {
 	serviceID := c.Param("id")
 	Status := c.Param("status")
@@ -428,6 +473,19 @@ func (a *Application) Status_Moderator(c *gin.Context) {
 	c.JSON(http.StatusOK, dyes)
 }
 
+// @Summary Удалить краситель из заявки
+// @Security ApiKeyAuth
+// @Description Удалить краситель из заявки
+// @Tags Colorant-Dye
+// @Accept       json
+// @Produce      json
+// @Param        idColorant   path      int  true  "ID красителя"
+// @Param        idDye   path      int  true  "ID заявки"
+// @Success 200 {string} string "Краситель был удален из заявки"
+// @Failure 400 {string} string "Некорректный запрос"
+// @Failure 404 {string} string "Некорректный запрос"
+// @Failure 500 {string} string "Ошибка сервера"
+// @Router /delete-MtM/{idDye}/colorant/{idColorant} [delete]
 func (a *Application) DeletionMtM(c *gin.Context) {
 	DyeID := c.Param("idDye")
 	ColorantId := c.Param("idColorant")
@@ -469,7 +527,6 @@ func (a *Application) OneOfDyes(c *gin.Context) {
 	if err != nil {
 		panic("failed to get products from DB")
 	}
-	//c.Header("Content-Type", "application/json; charset=utf-8")
 	c.JSON(http.StatusOK, dye)
 }
 
@@ -493,7 +550,6 @@ func AddColorantImage(repository *repository.Repository, c *gin.Context) {
 		return
 	}
 
-	// Чтение содержимого изображения в байтах
 	file, err := image.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при открытии"})
@@ -506,10 +562,9 @@ func AddColorantImage(repository *repository.Repository, c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка чтения"})
 		return
 	}
-	// Получение Content-Type из заголовков запроса
+
 	contentType := image.Header.Get("Content-Type")
 
-	// Вызов функции репозитория для добавления изображения
 	err = repository.AddColorantImage(id, imageBytes, contentType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})

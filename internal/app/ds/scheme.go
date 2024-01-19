@@ -32,16 +32,15 @@ type ColorantsAndOtheres struct {
 	ID_Colorant int64 `gorm:"primaryKey;autoIncrement"`
 	Name        string
 	Image       string
-	//Link        string
 	Description string
 	Properties  string
 	Status      string
 }
 
 type Dye_Colorants struct {
-	ID_Dye          uint //`gorm:"primaryKey"`
+	ID_Dye          uint 
 	DyeColorant     Dyes `gorm:"primaryKey;foreignKey:ID_Dye"`
-	ID_Colorant     uint //`gorm:"primaryKey"`
+	ID_Colorant     uint 
 	ColorantDye     ColorantsAndOtheres `gorm:"primaryKey;foreignKey:ID_Colorant"`
 	Percent_Content float64
 }

@@ -6,12 +6,17 @@ import (
 	app "awesomeProject/internal/api"
 )
 
-// @title Dyes from Colorants
+// @title Производство красок
 // @version 1.0
-// @description colorants app
+// @description Colorants app
 
 // @host localhost:8080
 // @BasePath /
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
 func main() {
 	log.Println("Application start!")
 	application, err := app.New()
@@ -22,3 +27,4 @@ func main() {
 	log.Println("Application terminated!")
 
 }
+

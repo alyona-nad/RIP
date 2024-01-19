@@ -8,13 +8,6 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"awesomeProject/internal/MinioClient"
-	//"github.com/gin-gonic/gin"
-	//"awesomeProject/internal/app/ds/jwt.go"
-	//"encoding/json"
-	//"net/http"
-	//"github.com/golang-jwt/jwt"
-	//"fmt"
-	//"github.com/google/uuid"
 )
 
 type Repository struct {
@@ -120,13 +113,11 @@ func (r *Repository) GetAllDyes() ([]DyeWithColorants, error) {
 		}
 		dyeWithColorants = append(dyeWithColorants, dyeWithColorant)
 
-		//dyes[i].Colorants = colorants
 	}
-	//return dyes, nil
 	return dyeWithColorants, nil
 }
 
-// func (r *Repository) GetDyeByID(id string) (ds.Dyes, error) {
+
 func (r *Repository) GetDyeByID(id string) (DyeWithColorants, error) {
 	dyes := &ds.Dyes{}
 
@@ -146,8 +137,6 @@ func (r *Repository) GetDyeByID(id string) (DyeWithColorants, error) {
 
 	var colorants []ds.ColorantsAndOtheres
 	r.db.Where("id_colorant IN ?", colorantIDs).Find(&colorants)
-	//dyes.Colorants = colorants
-	//r.db.Model(&dyes).Association("ID_Dye").Append(colorants)
 	dyeWithColorants := DyeWithColorants{
 		Dyes:      dyes,
 		Colorants: colorants,
@@ -156,12 +145,11 @@ func (r *Repository) GetDyeByID(id string) (DyeWithColorants, error) {
 		err=r.db.Exec("UPDATE dyes SET status = ? WHERE id_dye = ? and status=?", "удалено", id, "Действует").Error
 	}
 	return dyeWithColorants, nil
-	//return dye, nil
 }
 
 func (r *Repository) DeleteDye(id string, idUser uint) error {
 	var User ds.Users
-	err := r.db.Where("id_user = ? AND Role = ?", idUser, 1/*"Пользователь"*/).First(&User).Error
+	err := r.db.Where("id_user = ? ", idUser).First(&User).Error
 	if err != nil {
 		panic("Неверный статус пользователя")
 	} else {
@@ -190,7 +178,6 @@ func (r *Repository) CreateDye(idcolorant string, idUser uint) error {
 		}
 		dye_colorants.ID_Dye = newDye.ID_Dye
 		dye_colorants.ID_Colorant = uint(id)
-		//dye_colorants.Percent_Content=percent
 
 	} else {
 		dye_colorants.ID_Dye = dye.ID_Dye
@@ -201,64 +188,19 @@ func (r *Repository) CreateDye(idcolorant string, idUser uint) error {
 	return nil
 }
 
-/*func (r *Repository) CreateDye(idcolorant string, idUser uint) error {
 
-	var dye ds.Dyes
-	var dye_colorants ds.Dye_Colorants
-	err := r.db.Where("User_ID = ? AND Status = ?", idUser, "Действует").First(&dye).Error
-	id, err1 := strconv.Atoi(idcolorant)
-	if err1 != nil {
-		panic("failed to get products from DB")
-	}
-	if err != nil {
-		newDye := ds.Dyes{
-			User_ID:      idUser,
-			Status:       "Действует",
-			Name:         "Гуашь",
-			CreationDate: time.Now(),
-			Moderator:    idUser,
-		}
-		if err := r.db.Create(&newDye).Error; err != nil {
-			return err
-		}
-		dye_colorants.ID_Dye = newDye.ID_Dye
-		dye_colorants.ID_Colorant = uint(id)
-		//dye_colorants.Percent_Content=percent
-
-	} else {
-		dye_colorants.ID_Dye = dye.ID_Dye
-		dye_colorants.ID_Colorant = uint(id)
-		//dye_colorants.Percent_Content=percent
-	}
-	err = r.db.Table("dye_colorants").Create(&dye_colorants).Error
-	return nil
-}
-*/
-/*func (r *Repository) UpdateDye(id string, dye *ds.Dyes) error {
-	err := r.db.Model(&dye).Where("id_dye = ?", id).Updates(dye).Error
-	return err
-}*/
 func (r *Repository) UpdateDye(id string, dye *ds.Dyes) error {
     err := r.db.Where("id_dye = ?", id).Updates(dye).Error
     return err
 }
 
 func (r *Repository) UpdateDyePrice(id string, price uint) error {
-	/*newPrice, err := strconv.ParseUint(price,10,0)
-    if err != nil {
-        return err
-    }*/
-
-    // Используйте Find для поиска красителя по ID
     var dye ds.Dyes
     if err := r.db.First(&dye, "id_dye = ?", id).Error; err != nil {
         return err
     }
 
-    // Обновление цены
     dye.Price = price
-	//dye.Price = uint(newPrice)
-    // Сохранение изменений в базе данных
     if err := r.db.Save(&dye).Error; err != nil {
         return err
     }
@@ -279,7 +221,7 @@ func (r *Repository) StatusUser(id string, idUser uint) error {
 
 func (r *Repository) StatusModerator(id string, idUser uint, status string) error {
 	var User ds.Users
-	err := r.db.Where("id_user = ? AND Role = ?", idUser, 2/*"Модератор"*/).First(&User).Error
+	err := r.db.Where("id_user = ? AND Role = ?", idUser, 2).First(&User).Error
 	if err != nil {
 		panic("Неверный статус пользователя")
 	} else {
@@ -328,7 +270,6 @@ func (r *Repository) UpdateManytoMany(idDye string, idColorant string, dye *ds.D
 
 func (r *Repository) GetAllMtM() ([]ds.Dye_Colorants, error) {
 	var dye_colorant []ds.Dye_Colorants
-	//err := r.db.Find(&dye_colorant).Error
 	err := r.db.Preload("DyeColorant").Preload("ColorantDye").Find(&dye_colorant).Error
 	if err != nil {
 		return nil, err
@@ -343,8 +284,6 @@ func (r *Repository) GetAllMtM() ([]ds.Dye_Colorants, error) {
 
 		var colorants []ds.ColorantsAndOtheres
 		r.db.Where("id_colorant IN ?", colorantIDs).Find(&colorants)
-		//dye_colorant[i].DyeColorant.Colorants = colorants
-		//r.db.Model(&dye_colorant[i].DyeColorant).Association("ColorantDye").Append(colorants)
 	}
 
 	return dye_colorant, nil
@@ -354,7 +293,7 @@ func (r *Repository) DeleteMtM(idDye string, idColorant string) error {
 	return r.db.Where("id_dye = ? and id_colorant = ?", idDye, idColorant).Delete(&ds.Dye_Colorants{}).Error
 }
 
-func (r *Repository) FilterColorant(name string,id uint) (/*[]ds.ColorantsAndOtheres*/Colorants, error) {//черновик
+func (r *Repository) FilterColorant(name string,id uint) (Colorants, error) {
 	var colorant []ds.ColorantsAndOtheres
 	var User ds.Users
 	if name != "" {
@@ -410,7 +349,7 @@ func (r *Repository) FilterDyesByDateAndStatus(date1, date2 time.Time, status st
 	}
 	var User ds.Users
 	
-	err1 := r.db.Where("id_user = ? AND Role = ?", id, 2/*"Модератор"*/).First(&User).Error
+	err1 := r.db.Where("id_user = ? AND Role = ?", id, 2).First(&User).Error
 	if err1 != nil {
 		query = query.Where("user_id = ?", id)
 	}

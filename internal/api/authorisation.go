@@ -30,13 +30,13 @@ type registerResp struct {
 	Role        role.Role `json:"role"`
 }
 
-// @Summary Registration
-// @Description Registration
+
+// @Summary Регистрация
+// @Description Регистрация
 // @Tags auth
-// @ID registration
 // @Accept json
 // @Produce json
-// @Param input body ds.User true "user info"
+// @Param input body ds.Users true "Информация о пользователе"
 // @Success 200 {object} registerResp
 // @Router /auth/registration [post]
 func (a *Application) Register(gCtx *gin.Context) {
@@ -144,11 +144,12 @@ func checkPassword(password, hashedPassword string) bool {
     err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
     return err == nil
 }
-// @Summary Logout
+
+
+// @Summary Выход из аккаунта
 // @Security ApiKeyAuth
-// @Description Logout
+// @Description Выход из аккаунта
 // @Tags auth
-// @ID logout
 // @Produce json
 // @Success 200 {string} string
 // @Router /auth/logout [get]
@@ -199,10 +200,9 @@ type loginResp struct {
 	Role        role.Role `json:"role"`
 }
 
-// @Summary Login
+// @Summary Вход в аккаунт
+// @Description Логин
 // @Tags auth
-// @Description Login
-// @ID login
 // @Accept json
 // @Produce json
 // @Param input body loginReq true "login info"
