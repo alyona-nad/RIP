@@ -140,13 +140,12 @@ func generateHashString(s string) string {
 	//return string(hashedPassword)
 	return hex.EncodeToString(h.Sum(nil))
 }
-func checkPassword(password, hashedPassword string) bool {
+
+/*func checkPassword(password, hashedPassword string) bool {
     err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
     return err == nil
 }
-
-
-// @Summary Выход из аккаунта
+// @Summary Logout
 // @Security ApiKeyAuth
 // @Description Выход из аккаунта
 // @Tags auth
@@ -229,7 +228,7 @@ func (a *Application) Login(gCtx *gin.Context) {
 	// fmt.Println(req.Login)
 	// fmt.Println(user.Login)
 	//if req.Login == user.Login && checkPassword(req.Password, user.Password){
-	if req.Login == user.Login && user.Login == /*generateHashString*/(req.Password) {
+	if req.Login == user.Login && user.Password == generateHashString(req.Password) {
 		// значит проверка пройдена
 		// генерируем ему jwt
 		cfg.JWT.SigningMethod = jwt.SigningMethodHS256
