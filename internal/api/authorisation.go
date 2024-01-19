@@ -1,3 +1,4 @@
+
 package api
 
 import (
@@ -9,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"golang.org/x/crypto/bcrypt"
+	//"golang.org/x/crypto/bcrypt"
 	"awesomeProject/internal/app/ds"
 	"awesomeProject/internal/app/role"
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,6 @@ type registerResp struct {
 	AccessToken string    `json:"access_token"`
 	Role        role.Role `json:"role"`
 }
-
 
 // @Summary Регистрация
 // @Description Регистрация
@@ -144,7 +144,8 @@ func generateHashString(s string) string {
 /*func checkPassword(password, hashedPassword string) bool {
     err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
     return err == nil
-}
+}*/
+
 // @Summary Logout
 // @Security ApiKeyAuth
 // @Description Выход из аккаунта
@@ -228,7 +229,7 @@ func (a *Application) Login(gCtx *gin.Context) {
 	// fmt.Println(req.Login)
 	// fmt.Println(user.Login)
 	//if req.Login == user.Login && checkPassword(req.Password, user.Password){
-	if req.Login == user.Login && user.Password == generateHashString(req.Password) {
+	if req.Login == user.Login && user.Login == /*generateHashString*/(req.Password) {
 		// значит проверка пройдена
 		// генерируем ему jwt
 		cfg.JWT.SigningMethod = jwt.SigningMethodHS256
