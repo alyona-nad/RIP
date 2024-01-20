@@ -6,4 +6,5 @@
 Смежные репозитории:
 
 фронтенд (React, RTK, Vite) : https://github.com/alyona-nad/RIP_frontend
+
 нативное приложение (Tauri) : https://github.com/alyona-nad/Rip_native_app
