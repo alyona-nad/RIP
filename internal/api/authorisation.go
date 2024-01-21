@@ -229,7 +229,7 @@ func (a *Application) Login(gCtx *gin.Context) {
 	// fmt.Println(req.Login)
 	// fmt.Println(user.Login)
 	//if req.Login == user.Login && checkPassword(req.Password, user.Password){
-	if req.Login == user.Login && user.Login == /*generateHashString*/(req.Password) {
+	if req.Login == user.Login && user.Password == generateHashString(req.Password) {
 		// значит проверка пройдена
 		// генерируем ему jwt
 		cfg.JWT.SigningMethod = jwt.SigningMethodHS256
