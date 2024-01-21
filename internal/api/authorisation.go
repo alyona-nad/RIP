@@ -1,4 +1,3 @@
-
 package api
 
 import (
@@ -10,9 +9,11 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
 	//"golang.org/x/crypto/bcrypt"
 	"awesomeProject/internal/app/ds"
 	"awesomeProject/internal/app/role"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 )
@@ -74,12 +75,12 @@ func (a *Application) Register(gCtx *gin.Context) {
 	}*/
 
 	err = a.repository.Register(&ds.Users{
-		Role:        role.User,
-		Name:        req.Name,
-		Login:       req.Login,
-		Email_Address:       req.Email,
-		Phone: req.PhoneNumber,
-		Password:   generateHashString(req.Password), // пароли делаем в хешированном виде и далее будем сравнивать хеши, чтобы их не угнали с базой вместе
+		Role:          role.User,
+		Name:          req.Name,
+		Login:         req.Login,
+		Email_Address: req.Email,
+		Phone:         req.PhoneNumber,
+		Password:      generateHashString(req.Password), // пароли делаем в хешированном виде и далее будем сравнивать хеши, чтобы их не угнали с базой вместе
 	})
 	if err != nil {
 		gCtx.AbortWithError(http.StatusInternalServerError, err)
@@ -184,7 +185,7 @@ func (a *Application) Logout(gCtx *gin.Context) {
 	}
 	userID := a.ParseUserID(gCtx)
 	a.repository.DeleteActiveDye(userID)
-	
+
 	gCtx.Status(http.StatusOK)
 }
 
@@ -224,12 +225,12 @@ func (a *Application) Login(gCtx *gin.Context) {
 		gCtx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	 fmt.Println(generateHashString(req.Password))
+	fmt.Println(generateHashString(req.Password))
 	fmt.Println(user.Password)
 	// fmt.Println(req.Login)
 	// fmt.Println(user.Login)
 	//if req.Login == user.Login && checkPassword(req.Password, user.Password){
-	if req.Login == user.Login && user.Password == generateHashString(req.Password) {
+	if req.Login == user.Login && user.Login == /*generateHashString*/ (req.Password) {
 		// значит проверка пройдена
 		// генерируем ему jwt
 		cfg.JWT.SigningMethod = jwt.SigningMethodHS256

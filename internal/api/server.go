@@ -65,7 +65,7 @@ func (a *Application) StartServer() {
 	r.GET("/list_of_dyes", a.WithAuthCheck(role.User, role.Moderator), a.FilterDyes)
 	r.GET("/dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.OneOfDyes)
 	r.DELETE("/delete-dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.DeletionDye)
-	/*r.PUT("/update_dyes/:id", a.WithAuthCheck(role.Moderator), a.DyeUpdation)*/
+	r.PUT("/update_dyes/:id", a.WithAuthCheck(role.Moderator), a.DyeUpdation)
 	r.PUT("/update_dyes/:id/put", a.DyeUpdationPrice)
 	r.PUT("/formation-dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.Status_User)
 	r.PUT("/dyeid/:id/status/:status", a.WithAuthCheck(role.Moderator), a.Status_Moderator)
@@ -355,7 +355,7 @@ func (a *Application) DyeUpdationPrice(c *gin.Context) {
 	}
 }
 
-/*
+
 // @Summary Обновить заявку
 // @Security ApiKeyAuth
 // @Description Обновить заявку
@@ -385,7 +385,7 @@ func (a *Application) DyeUpdation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dye)
-}*/
+}
 
 // @Summary Сформировать заявку
 // @Security ApiKeyAuth
