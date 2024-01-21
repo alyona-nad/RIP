@@ -1,22 +1,22 @@
 package api
 
 import (
+	_ "RIP/docs"
 	"awesomeProject/internal/app/ds"
 	"awesomeProject/internal/app/repository"
 	"awesomeProject/internal/app/role"
 	"io"
 	"log"
 	"net/http"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"strconv"
 	"time"
-	_ "RIP/docs"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"github.com/gin-contrib/cors"
-	
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type DyeWithColorants struct {
@@ -32,7 +32,7 @@ func (a *Application) StartServer() {
 	r.LoadHTMLGlob("C:/Program Files/Go/src/RIP/templates/*")
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000","http://localhost:7000"}
+	config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:7000"}
 	r.Use(cors.New(config))
 	r.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
@@ -50,7 +50,7 @@ func (a *Application) StartServer() {
 	{
 		AuthGroup.POST("/registration", a.Register)
 		AuthGroup.POST("/login", a.Login)
-		AuthGroup.GET("/logout", a.Logout)
+		AuthGroup.POST("/logout", a.Logout)
 
 	}
 
@@ -61,18 +61,18 @@ func (a *Application) StartServer() {
 	r.POST("/new_colorant", a.WithAuthCheck(role.Moderator), a.Creation)
 	r.POST("/colorant/:id", a.WithAuthCheck(role.User, role.Moderator), a.AddColorantInDye)
 	r.POST("/:id/addImage", a.WithAuthCheck(role.Moderator), a.Add_Image)
-	
+
 	r.GET("/list_of_dyes", a.WithAuthCheck(role.User, role.Moderator), a.FilterDyes)
 	r.GET("/dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.OneOfDyes)
 	r.DELETE("/delete-dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.DeletionDye)
-	r.PUT("/update_dyes/:id", a.WithAuthCheck(role.Moderator), a.DyeUpdation)
+	/*r.PUT("/update_dyes/:id", a.WithAuthCheck(role.Moderator), a.DyeUpdation)*/
 	r.PUT("/update_dyes/:id/put", a.DyeUpdationPrice)
-	r.PUT("/formation-dye/:id", a.WithAuthCheck(role.User,role.Moderator), a.Status_User)
+	r.PUT("/formation-dye/:id", a.WithAuthCheck(role.User, role.Moderator), a.Status_User)
 	r.PUT("/dyeid/:id/status/:status", a.WithAuthCheck(role.Moderator), a.Status_Moderator)
-	
+
 	r.DELETE("/delete-MtM/:idDye/colorant/:idColorant", a.WithAuthCheck(role.User, role.Moderator), a.DeletionMtM)
 	r.PUT("/update_many_to_many/:idDye/colorant/:idColorant", a.WithAuthCheck(role.Moderator), a.UpdationMtM)
-	
+
 	r.Run()
 
 	log.Println("Server down")
@@ -355,6 +355,7 @@ func (a *Application) DyeUpdationPrice(c *gin.Context) {
 	}
 }
 
+/*
 // @Summary Обновить заявку
 // @Security ApiKeyAuth
 // @Description Обновить заявку
@@ -384,7 +385,7 @@ func (a *Application) DyeUpdation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dye)
-}
+}*/
 
 // @Summary Сформировать заявку
 // @Security ApiKeyAuth
@@ -410,9 +411,9 @@ func (a *Application) Status_User(c *gin.Context) {
 	for _, user := range User {
 		if user.ID_User == userID {
 
-				found = true
-				break
-			
+			found = true
+			break
+
 		}
 	}
 
